@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenDTU Shelly3EM Nulleinspeisung
+After=network.target
+
+[Service]
+User=server
+Type=simple
+Restart=always
+RestartSec=10
+WorkingDirectory=/home/server/opendtu-shelly3em-nulleinspeisung/
+ExecStart=/usr/bin/python3 /home/server/opendtu-shelly3em-nulleinspeisung/app.py
+
+[Install]
+WantedBy=multi-user.target
