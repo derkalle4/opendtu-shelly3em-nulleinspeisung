@@ -1,5 +1,8 @@
-# opendtu-shelly3em-nulleinspeisung
-Nulleinspeisung mit der OpenDTU und dem Shelly3EM
+# OpenDTU and Shelly3EM zero feed / Nulleinspeisung
+This is an Open Source tool provided "as is" to allow you a solar balkony feed without transmitting power to the grid. Hint: it is impossible to achieve +- 0 feed to the grid. This script will overprovision a little bit to make sure we do not draw power from the grid if the solar panels produce enough power.
+
+# Attention
+This tool is provided "as is". There is no guarantee that this is working like expected. However, feel free to create a pull request or an issue in case of any errors.
 
 ## Installation
 
@@ -35,4 +38,4 @@ Enable and restart the service to make sure it is running after a reboot:
 - systemctl enable mosquitto.service
 - systemctl restart mosquitto.service
 
-Enter the above created usernames and passwords to the OpenDTU and Shelly3EM. The account for the Tool will be configured in a later step.
+Enter the above created usernames and passwords to the OpenDTU and Shelly3EM. The account for the tool will be configured in a later step.
