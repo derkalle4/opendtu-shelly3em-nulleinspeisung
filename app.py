@@ -1,4 +1,5 @@
 import logging
+import math
 import paho.mqtt.client as mqtt
 import time
 import yaml
@@ -10,6 +11,7 @@ class app:
     mqtt = None
     mqtt_shelly3em_data = {}
     mqtt_opendtu_data = {}
+    old_limit_percentage = 0
 
     def __init__(self):
         """Initialize the app class"""
@@ -37,9 +39,61 @@ class app:
 
     def _calculate_solar_power_percentage(self):
         """Calculate the solar power percentage depending on the current power from shelly3em"""
+        logging.debug('calculating solar power percentage')
         # TODO: check if opendtu is sending data, skip otherwise
+        if not 'status/reachable' in self.mqtt_opendtu_data or self.mqtt_opendtu_data['status/reachable'] == 0:
+            logging.error(
+                'opendtu is not reachable, skipping calculation (is it dark outside?)')
+            return
+        # initialize variables
+        grid_sum = 0
+        dtu_maximum_power = (self.config['opendtu']['max_power'] / 100) * \
+            self.config['config']['maximum_power_percentage']
+        dtu_minimum_power = (self.config['opendtu']['max_power'] / 100) * \
+            self.config['config']['minimum_power_percentage']
         # sum shelly phases if necessary
-        print('= test')
+        for phase in self.config['shelly3em']['shelly_phases']:
+            logging.debug('adding shelly3em phase %i to grid_sum', phase)
+            grid_sum += float(
+                self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
+        logging.debug('total_power_consumption: %i', grid_sum)
+        # set new limit (and add 5 watts to prevent drawing power from the grid)
+        new_limit = grid_sum + 5
+        # check for minimum and maximum power boundaries
+        if new_limit > dtu_maximum_power:
+            new_limit = dtu_maximum_power
+            logging.debug(
+                'new limit is higher than dtu_maximum_power, setting new_limit to dtu_maximum_power (%i)',
+                dtu_maximum_power
+            )
+        elif new_limit < dtu_minimum_power:
+            new_limit = dtu_minimum_power
+            logging.debug(
+                'new limit is lower than dtu_minimum_power, setting new_limit to dtu_minimum_power (%i)',
+                dtu_minimum_power
+            )
+        else:
+            logging.debug(
+                'new limit is between dtu_maximum_power and dtu_minimum_power (%i)',
+                new_limit
+            )
+        # calculate new limit percentage
+        new_limit_percentage = math.ceil(math.ceil(new_limit) /
+                                         (dtu_maximum_power / 100))
+        logging.debug('new limit percentage: %i', new_limit_percentage)
+        # publish new limit percentage if it has changed
+        if self.old_limit_percentage != new_limit_percentage:
+            logging.info(
+                'publishing new limit percentage to MQTT server: %i',
+                new_limit_percentage
+            )
+            self.mqtt.publish(
+                '{}/status/limit_relative'.format(
+                    self.config['opendtu']['mqtt_prefix']
+                ),
+                new_limit_percentage
+            )
+            self.old_limit_percentage = new_limit_percentage
 
     def _mqtt_worker(self):
         self.mqtt.loop_forever()
