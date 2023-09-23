@@ -1,3 +1,6 @@
+config:
+  minimum_power_percentage: 2 # minimum percentage solar power (OpenDTU requires 2%)
+  maximum_power_percentage: 100 # maximum percentage solar power
 mqtt: # MQTT broker (e.g. Mosquitto)
   host: 127.0.0.1
   port: 1883
