@@ -22,7 +22,7 @@ listener 1883
 password_file /etc/mosquitto/passwd
 ```
 
-Save the file by pressing "CTRL + X" and afterwars acknowledge with "y" and "ENTER".
+Save the file by pressing "CTRL + X" and afterwards acknowledge with "y" and "ENTER".
 
 Create three Accounts (for OpenDTU, Shelly3EM and this tool):
 
