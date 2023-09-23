@@ -1,0 +1,12 @@
+mqtt: # MQTT broker (e.g. Mosquitto)
+  host: 127.0.0.1
+  port: 1883
+  keepalive: 60
+  username: test
+  password: test
+shelly3em:
+  mqtt_prefix: shelly3em
+  shelly_phases: [0] # phases to combine (0, 1, 2) if you measure multiple phases
+opendtu:
+  mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
+  max_power: 1500 # max power of inverter in Watt for calculation of percentage
