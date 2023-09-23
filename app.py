@@ -1,6 +1,7 @@
 import logging
 import math
 import paho.mqtt.client as mqtt
+import threading
 import time
 import yaml
 
@@ -8,6 +9,7 @@ import yaml
 class app:
     yaml_config_file = 'config.yaml'
     config = None
+    threads = []
     mqtt = None
     mqtt_shelly3em_data = {}
     mqtt_opendtu_data = {}
@@ -18,7 +20,7 @@ class app:
         self._configure_logging()
         self._load_yaml_config()
         self._connect_to_mqtt()
-        self._mqtt_worker()
+        self._setup_threads()
 
     def _configure_logging(self):
         logging.basicConfig(
@@ -41,7 +43,7 @@ class app:
         """Calculate the solar power percentage depending on the current power from shelly3em"""
         logging.debug('calculating solar power percentage')
         # TODO: check if opendtu is sending data, skip otherwise
-        if not 'status/reachable' in self.mqtt_opendtu_data or self.mqtt_opendtu_data['status/reachable'] == 0:
+        if not 'status/reachable' in self.mqtt_opendtu_data or int(self.mqtt_opendtu_data['status/reachable']) == 0:
             logging.error(
                 'opendtu is not reachable, skipping calculation (is it dark outside?)')
             return
@@ -94,6 +96,21 @@ class app:
                 new_limit_percentage
             )
             self.old_limit_percentage = new_limit_percentage
+
+    def _setup_threads(self):
+        """Setup threads"""
+        # setup mqtt thread
+        mqtt_thread = threading.Thread(
+            target=self._mqtt_worker, name='mqtt_thread')
+        mqtt_thread.daemon = True
+        mqtt_thread.start()
+        self.threads.append(mqtt_thread)
+        try:
+            for thread in self.threads:
+                thread.join()
+        except KeyboardInterrupt:
+            logging.info('keyboard interrupt detected (SIGINT), exiting')
+            quit()
 
     def _mqtt_worker(self):
         self.mqtt.loop_forever()
