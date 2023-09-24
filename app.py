@@ -323,7 +323,7 @@ class app:
         if ('emeter/0/power' in msg.topic and 0 in self.config['shelly3em']['shelly_phases']) \
                 or ('/emeter/1/power' in msg.topic and 1 in self.config['shelly3em']['shelly_phases']) \
                 or ('/emeter/2/power' in msg.topic and 2 in self.config['shelly3em']['shelly_phases']) \
-                or ('/emeter/2/power' in msg.topic and 2 in self.config['shelly3em']['shelly_phases'])
+                or ('/emeter/2/power' in msg.topic and 2 in self.config['shelly3em']['shelly_phases']):
             self._calculate_solar_power_percentage()
 
 
