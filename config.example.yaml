@@ -1,7 +1,7 @@
 config:
   minimum_power_percentage: 5 # minimum percentage solar power (OpenDTU requires at least 2%)
   maximum_power_percentage: 100 # maximum percentage solar power
-  additional_power: 5 # overprovisioning of solar power to avoid drawing power from grid
+  additional_power: 10 # overprovisioning of solar power to avoid drawing power from grid
 webserver:
   host: 0.0.0.0 # listen on all interfaces
   port: 8000 # listen on port 8000
@@ -17,4 +17,4 @@ shelly3em:
 opendtu:
   mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
   max_power: 1500 # max power of inverter in Watt for calculation of percentage
-  delay_between_updates: 10 # delay between mqtt updates to the opendtu in seconds
+  delay_between_updates: 6 # delay between mqtt updates to the opendtu in seconds
