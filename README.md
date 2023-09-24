@@ -15,6 +15,10 @@ Run the following commands as root:
 ### Prequisites (as user)
 Run the following commands as a normal user which later on runs the software:
 - pip3 install paho-mqtt
+- pip3 install uvicorn
+- pip3 install asyncio
+- pip3 install fastapi
+- pip3 install jinja2
 
 ### Configuration of Mosquitto (MQTT Broker)
 The configuration of the MQTT browser is easy. After installing the prequisites (see above) you can simply create a new configuration file:

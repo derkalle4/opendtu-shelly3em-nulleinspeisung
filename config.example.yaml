@@ -1,6 +1,9 @@
 config:
   minimum_power_percentage: 2 # minimum percentage solar power (OpenDTU requires 2%)
   maximum_power_percentage: 100 # maximum percentage solar power
+uvicorn: # web server
+  host: 0.0.0.0 # listen on all interfaces
+  port: 8000 # listen on port 8000
 mqtt: # MQTT broker (e.g. Mosquitto)
   host: 127.0.0.1
   port: 1883

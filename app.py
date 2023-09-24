@@ -1,8 +1,16 @@
+import asyncio
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import json
 import logging
 import math
 import paho.mqtt.client as mqtt
 import threading
 import time
+import uvicorn
 import yaml
 
 
@@ -13,10 +21,19 @@ class app:
     mqtt = None
     mqtt_shelly3em_data = {}
     mqtt_opendtu_data = {}
-    old_limit_percentage = 0
+    data_calculated = {
+        'old_limit_percentage': 0,
+        'grid_sum': 0,
+        'dtu_maximum_power': 0,
+        'dtu_minimum_power': 0,
+        'new_limit': 0,
+        'new_limit_percentage': 0
+    }
 
     def __init__(self):
-        """Initialize the app class"""
+        """Initialize the app class
+        """
+        self.app = FastAPI()
         self._configure_logging()
         self._load_yaml_config()
         self._connect_to_mqtt()
@@ -39,6 +56,17 @@ class app:
             logging.error('could not load config: %s', exc)
             quit()
 
+    def _reset(self):
+        """Reset variables"""
+        self.data_calculated = {
+            'old_limit_percentage': 0,
+            'grid_sum': 0,
+            'dtu_maximum_power': 0,
+            'dtu_minimum_power': 0,
+            'new_limit': 0,
+            'new_limit_percentage': 0
+        }
+
     def _calculate_solar_power_percentage(self):
         """Calculate the solar power percentage depending on the current power from shelly3em"""
         logging.debug('calculating solar power percentage')
@@ -46,6 +74,7 @@ class app:
         if not 'status/reachable' in self.mqtt_opendtu_data or int(self.mqtt_opendtu_data['status/reachable']) == 0:
             logging.error(
                 'opendtu is not reachable, skipping calculation (is it dark outside?)')
+            self._reset()
             return
         # initialize variables
         grid_sum = 0
@@ -84,7 +113,7 @@ class app:
                                          (dtu_maximum_power / 100))
         logging.debug('new limit percentage: %i', new_limit_percentage)
         # publish new limit percentage if it has changed
-        if self.old_limit_percentage != new_limit_percentage:
+        if self.data_calculated['old_limit_percentage'] != new_limit_percentage:
             logging.info(
                 'publishing new limit percentage to MQTT server: %i',
                 new_limit_percentage
@@ -95,22 +124,94 @@ class app:
                 ),
                 new_limit_percentage
             )
-            self.old_limit_percentage = new_limit_percentage
+        # update calculated data
+        data_calculated = {
+            'old_limit_percentage': new_limit_percentage,
+            'grid_sum': grid_sum,
+            'dtu_maximum_power': dtu_maximum_power,
+            'dtu_minimum_power': dtu_minimum_power,
+            'new_limit': new_limit,
+            'new_limit_percentage': new_limit_percentage
+        }
 
     def _setup_threads(self):
         """Setup threads"""
         # setup mqtt thread
         mqtt_thread = threading.Thread(
-            target=self._mqtt_worker, name='mqtt_thread')
+            target=self._mqtt_worker,
+            name='mqtt_thread'
+        )
         mqtt_thread.daemon = True
         mqtt_thread.start()
         self.threads.append(mqtt_thread)
+        # setup uvicorn thread
+        uvicorn_thread = threading.Thread(
+            target=asyncio.run,
+            args=(self._uvicorn_worker(),),
+            name='uvicorn_thread'
+        )
+        uvicorn_thread.daemon = True
+        uvicorn_thread.start()
+        self.threads.append(uvicorn_thread)
         try:
             for thread in self.threads:
                 thread.join()
         except KeyboardInterrupt:
             logging.info('keyboard interrupt detected (SIGINT), exiting')
             quit()
+
+    async def _uvicorn_worker(self):
+        logging.info('starting uvicorn webserver')
+        app: FastAPI = self.app
+        app.mount(
+            "/static",
+            StaticFiles(
+                directory="webserver/static/"
+            ),
+            name="static"
+        )
+        templates = Jinja2Templates(directory="webserver/templates/")
+        config = uvicorn.Config(
+            app,
+            host=self.config['webserver']['host'],
+            port=self.config['webserver']['port']
+        )
+        server = uvicorn.Server(config)
+
+        @app.get("/", response_class=HTMLResponse)
+        async def _web_overview(request: Request):
+            return templates.TemplateResponse(
+                "overview.html",
+                {
+                    "request": request,
+                    "config": self.config,
+                    "data": {
+                        'shelly3em': self.mqtt_shelly3em_data,
+                        'opendtu': self.mqtt_opendtu_data,
+                        'calculated': self.data_calculated
+                    }
+                }
+            )
+
+        @app.get("/pull", response_class=HTMLResponse)
+        async def _web_pull(request: Request):
+            return JSONResponse(
+                content=jsonable_encoder({
+                    'shelly3em': self.mqtt_shelly3em_data,
+                    'opendtu': self.mqtt_opendtu_data,
+                    'calculated': self.data_calculated
+                })
+            )
+        # disable logging
+        logger = logging.getLogger("uvicorn.error")
+        logger.propagate = False
+        # serve website
+        logging.info(
+            'serving website on %s:%i',
+            self.config['webserver']['host'],
+            self.config['webserver']['port']
+        )
+        await server.serve()
 
     def _mqtt_worker(self):
         self.mqtt.loop_forever()
@@ -169,9 +270,13 @@ class app:
         # save message to topic
         topic = message.topic.replace(
             'shellies/{}/'.format(self.config['shelly3em']['mqtt_prefix']), '')
-        self.mqtt_shelly3em_data[topic] = message.payload.decode(
-            "utf-8"
-        )
+        data = message.payload.decode("utf-8")
+        # check if message is valid json
+        try:
+            data = json.loads(data)
+        except ValueError as e:
+            pass
+        self.mqtt_shelly3em_data[topic] = data
         self.mqtt_shelly3em_data['last_update'] = time.time()
 
     def _mqtt_callback_opendtu(self, client, userdata, message):
@@ -183,9 +288,13 @@ class app:
         # save message to topic
         topic = message.topic.replace(
             'solar/{}/'.format(self.config['opendtu']['mqtt_prefix']), '')
-        self.mqtt_opendtu_data[topic] = message.payload.decode(
-            "utf-8"
-        )
+        data = message.payload.decode("utf-8")
+        # check if message is valid json
+        try:
+            data = json.loads(data)
+        except ValueError as e:
+            pass
+        self.mqtt_opendtu_data[topic] = data
         self.mqtt_opendtu_data['last_update'] = time.time()
 
     def _on_mqtt_disconnect(self, client, userdata, rc):
