@@ -29,14 +29,15 @@ async function pullData() {
                 if (element.innerText != tmpData) {
                     // set element text
                     element.innerText = tmpData;
-                    // get element next to the parent element
-                    let elementNext = element.nextElementSibling;
                     // append text to elementNext and remove it after 3 seconds
                     setTimeout(function () {
-                        elementNext.innerHTML = elementNext.attributes['data-value'].value;
+                        // remove style attributes
+                        element.removeAttribute("style");
                     }, 1000);
-                    elementNext.setAttribute("data-value", elementNext.innerText);
-                    elementNext.innerHTML = elementNext.innerHTML + ' <img src="/static/icons/arrow-clockwise.svg" alt="value updated" class="svg-green"/>';
+                    // set element color to green
+                    element.style.color = 'green';
+                    // set element font weight to bold
+                    element.style.fontWeight = 'bold';
                 }
             });
         });
