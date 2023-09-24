@@ -1,5 +1,5 @@
 config:
-  minimum_power_percentage: 5 # minimum percentage solar power (OpenDTU requires at least 2%)
+  minimum_power_percentage: 4 # minimum percentage solar power (OpenDTU requires at least 2%)
   maximum_power_percentage: 100 # maximum percentage solar power
   additional_power: 10 # overprovisioning of solar power to avoid drawing power from grid
 webserver:
