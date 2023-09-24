@@ -93,7 +93,7 @@ class app:
                 self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
         logging.debug('total_power_consumption: %i', grid_sum)
         # set new limit (and add 5 watts to prevent drawing power from the grid)
-        new_limit = math.ceil(grid_sum + self.data_calculated['old_limit'] + 5)
+        new_limit = math.ceil(grid_sum + self.data_calculated['old_limit'] + self.config['config']['additional_power'])
         # check for minimum and maximum power boundaries
         if new_limit > dtu_maximum_power:
             new_limit = dtu_maximum_power
