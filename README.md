@@ -4,6 +4,14 @@ This is an Open Source tool provided "as is" to allow you a solar balkony feed w
 ## Attention
 This tool is provided "as is". There is no guarantee that this is working like expected. However, feel free to create a pull request or an issue in case of any errors.
 
+## Minimum Requirements
+
+### Potato (Raspberry Pi 2B or later)
+This software is running on my Raspbery Pi 2B with 800Mhz (slightly overclocked from 700Mhz) and 500MB RAM. However, I used the fastest SD card that one could possible get to avoid disk bottlenecks. It is a good idea to use "log2ram" to avoid writing to the SD card too often.
+
+### Virtual Machine / Bare Bone
+This software is well to small to use a lot of resources. One core is enough. However, I would recommend a VM with at least two cores and 512MB RAM with 2GB disk space for Debian, Ubuntu or any other Operating System you like (do not use Windows, though!).
+
 ## Installation
 
 ### Prequisites (as root)
