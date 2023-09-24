@@ -125,7 +125,7 @@ class app:
                 new_limit_percentage
             )
         # update calculated data
-        data_calculated = {
+        self.data_calculated = {
             'old_limit_percentage': new_limit_percentage,
             'grid_sum': grid_sum,
             'dtu_maximum_power': dtu_maximum_power,
