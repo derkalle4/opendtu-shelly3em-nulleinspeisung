@@ -23,12 +23,10 @@ class app:
     mqtt_opendtu_data = {}
     data_calculated = {
         'old_limit': 0,
-        'old_limit_percentage': 0,
         'grid_sum': 0,
         'dtu_maximum_power': 0,
         'dtu_minimum_power': 0,
         'new_limit': 0,
-        'new_limit_percentage': 0,
         'last_calculated': 0
     }
 
@@ -62,12 +60,10 @@ class app:
         """Reset variables"""
         self.data_calculated = {
             'old_limit': 0,
-            'old_limit_percentage': 0,
             'grid_sum': 0,
             'dtu_maximum_power': 0,
             'dtu_minimum_power': 0,
             'new_limit': 0,
-            'new_limit_percentage': 0,
             'last_calculated': 0
         }
 
@@ -93,7 +89,8 @@ class app:
                 self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
         logging.debug('total_power_consumption: %i', grid_sum)
         # set new limit (and add 5 watts to prevent drawing power from the grid)
-        new_limit = math.ceil(grid_sum + self.data_calculated['old_limit'] + self.config['config']['additional_power'])
+        new_limit = math.ceil(
+            grid_sum + self.data_calculated['old_limit'] + self.config['config']['additional_power'])
         # check for minimum and maximum power boundaries
         if new_limit > dtu_maximum_power:
             new_limit = dtu_maximum_power
@@ -112,35 +109,27 @@ class app:
                 'new limit is between dtu_maximum_power and dtu_minimum_power (%i)',
                 new_limit
             )
-        # calculate new limit percentage
-        new_limit_percentage = math.ceil(
-            math.ceil(new_limit) /
-            (dtu_maximum_power / 100)
-        )
-        logging.debug('new limit percentage: %i', new_limit_percentage)
         # update calculated data
         self.data_calculated['old_limit'] = self.data_calculated['new_limit']
-        self.data_calculated['old_limit_percentage'] = self.data_calculated['new_limit_percentage']
         self.data_calculated['grid_sum'] = grid_sum
         self.data_calculated['dtu_maximum_power'] = dtu_maximum_power
         self.data_calculated['dtu_minimum_power'] = dtu_minimum_power
         # publish new limit percentage if it has changed
-        if self.data_calculated['old_limit_percentage'] != new_limit_percentage \
+        if self.data_calculated['old_limit'] != new_limit \
                 and self.data_calculated['last_calculated'] < time.time() - self.config['opendtu']['delay_between_updates']:
             logging.info(
-                'publishing new limit percentage to MQTT server: %i',
-                new_limit_percentage
+                'publishing new limit to MQTT server: %i watts',
+                new_limit
             )
             # publish new limit percentage
             self.mqtt.publish(
-                'solar/{}/cmd/limit_nonpersistent_relative'.format(
+                'solar/{}/cmd/limit_nonpersistent_absolute'.format(
                     self.config['opendtu']['mqtt_prefix']
                 ),
-                new_limit_percentage
+                new_limit
             )
             # update calculated data
             self.data_calculated['new_limit'] = new_limit
-            self.data_calculated['new_limit_percentage'] = new_limit_percentage
             self.data_calculated['last_calculated'] = time.time()
 
     def _setup_threads(self):
