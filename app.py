@@ -84,6 +84,7 @@ class app:
             self.config['config']['maximum_power_percentage']
         dtu_minimum_power = (self.config['opendtu']['max_power'] / 100) * \
             self.config['config']['minimum_power_percentage']
+        dtu_current_power = self.mqtt_opendtu_data['0/power']
         # sum shelly phases if necessary
         for phase in self.config['shelly3em']['shelly_phases']:
             logging.debug('adding shelly3em phase %i to grid_sum', phase)
@@ -123,7 +124,7 @@ class app:
                 new_limit_percentage
             )
             self.mqtt.publish(
-                '{}/status/limit_relative'.format(
+                'solar/{}/cmd/limit_nonpersistent_relative'.format(
                     self.config['opendtu']['mqtt_prefix']
                 ),
                 new_limit_percentage
