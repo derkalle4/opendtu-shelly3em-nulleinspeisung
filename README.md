@@ -4,6 +4,12 @@ This is an Open Source tool provided "as is" to allow you a solar balkony feed w
 ## Attention
 This tool is provided "as is". There is no guarantee that this is working like expected. However, feel free to create a pull request or an issue in case of any errors.
 
+## Demo
+
+Overivew            |  OpenDTU            | Shelly3EM
+:-------------------------:|:-------------------------:
+[[/demo/overview_mobile.png|Website Overview]]  |  [[/demo/dtu_mobile.png|OpenDTU Overview]]  |  [[/demo/shelly_mobile.png|Shelly3EM Overview]]
+
 ## Minimum Requirements
 
 ### Potato (Raspberry Pi 2B or later)
