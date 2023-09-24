@@ -48,6 +48,12 @@
                                     <div class="col col-6 text-start">
                                         Watt (Gesamt)
                                     </div>
+                                    <div class="col col-6 text-end" data-pull="opendtu.0/powerdc">
+                                        {{ data.opendtu["0/powerdc"] }}
+                                    </div>
+                                    <div class="col col-6 text-start">
+                                        Watt (AC WR)
+                                    </div>
                                     <div class="col col-6 text-end" data-pull="calculated.new_limit">
                                         {{ data.calculated.new_limit }}
                                     </div>
