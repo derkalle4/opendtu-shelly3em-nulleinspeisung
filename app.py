@@ -22,6 +22,7 @@ class app:
     mqtt_shelly3em_data = {}
     mqtt_opendtu_data = {}
     data_calculated = {
+        'old_limit': 0,
         'old_limit_percentage': 0,
         'grid_sum': 0,
         'dtu_maximum_power': 0,
@@ -59,6 +60,7 @@ class app:
     def _reset(self):
         """Reset variables"""
         self.data_calculated = {
+            'old_limit': 0, 
             'old_limit_percentage': 0,
             'grid_sum': 0,
             'dtu_maximum_power': 0,
@@ -89,7 +91,7 @@ class app:
                 self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
         logging.debug('total_power_consumption: %i', grid_sum)
         # set new limit (and add 5 watts to prevent drawing power from the grid)
-        new_limit = grid_sum + 5
+        new_limit = math.ceil(grid_sum + self.data_calculated['old_limit'] + 5)
         # check for minimum and maximum power boundaries
         if new_limit > dtu_maximum_power:
             new_limit = dtu_maximum_power
@@ -109,8 +111,10 @@ class app:
                 new_limit
             )
         # calculate new limit percentage
-        new_limit_percentage = math.ceil(math.ceil(new_limit) /
-                                         (dtu_maximum_power / 100))
+        new_limit_percentage = math.ceil(
+            math.ceil(new_limit) /
+            (dtu_maximum_power / 100)
+        )
         logging.debug('new limit percentage: %i', new_limit_percentage)
         # publish new limit percentage if it has changed
         if self.data_calculated['old_limit_percentage'] != new_limit_percentage:
@@ -126,6 +130,7 @@ class app:
             )
         # update calculated data
         self.data_calculated = {
+            'old_limit': self.data_calculated['new_limit'],
             'old_limit_percentage': new_limit_percentage,
             'grid_sum': grid_sum,
             'dtu_maximum_power': dtu_maximum_power,
