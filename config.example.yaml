@@ -1,7 +1,7 @@
 config:
-  minimum_power_percentage: 2 # minimum percentage solar power (OpenDTU requires 2%)
+  minimum_power_percentage: 5 # minimum percentage solar power (OpenDTU requires at least 2%)
   maximum_power_percentage: 100 # maximum percentage solar power
-uvicorn: # web server
+webserver:
   host: 0.0.0.0 # listen on all interfaces
   port: 8000 # listen on port 8000
 mqtt: # MQTT broker (e.g. Mosquitto)
@@ -12,7 +12,8 @@ mqtt: # MQTT broker (e.g. Mosquitto)
   password: test
 shelly3em:
   mqtt_prefix: shelly3em
-  shelly_phases: [0] # phases to combine (0, 1, 2) if you measure multiple phases
+  shelly_phases: [0,1,2] # phases to combine (0, 1, 2) if you measure multiple phases
 opendtu:
   mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
   max_power: 1500 # max power of inverter in Watt for calculation of percentage
+  delay_between_updates: 10 # delay between mqtt updates to the opendtu in seconds
