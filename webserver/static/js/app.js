@@ -34,7 +34,7 @@ async function pullData() {
                     // append text to elementNext and remove it after 3 seconds
                     setTimeout(function () {
                         elementNext.innerHTML = elementNext.attributes['data-value'].value;
-                    }, 3000);
+                    }, 1000);
                     elementNext.setAttribute("data-value", elementNext.innerText);
                     elementNext.innerHTML = elementNext.innerHTML + ' <img src="/static/icons/arrow-clockwise.svg" alt="value updated" class="svg-green"/>';
                 }
