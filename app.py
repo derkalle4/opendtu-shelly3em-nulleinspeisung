@@ -23,10 +23,11 @@ class app:
     mqtt_opendtu_data = {}
     data_calculated = {
         'old_limit': 0,
+        'new_limit': 0,
+        'normalized_sum': 0,
         'grid_sum': 0,
         'dtu_maximum_power': 0,
         'dtu_minimum_power': 0,
-        'new_limit': 0,
         'last_calculated': 0
     }
 
@@ -60,21 +61,26 @@ class app:
         """Reset variables"""
         self.data_calculated = {
             'old_limit': 0,
+            'new_limit': 0,
+            'normalized_sum': 0,
             'grid_sum': 0,
             'dtu_maximum_power': 0,
             'dtu_minimum_power': 0,
-            'new_limit': 0,
             'last_calculated': 0
         }
 
     def _calculate_solar_power_percentage(self):
         """Calculate the solar power percentage depending on the current power from shelly3em"""
         logging.debug('calculating solar power percentage')
-        # TODO: check if opendtu is sending data, skip otherwise
         if not 'status/reachable' in self.mqtt_opendtu_data or int(self.mqtt_opendtu_data['status/reachable']) == 0:
             logging.error(
                 'opendtu is not reachable, skipping calculation (is it dark outside?)')
             self._reset()
+            return
+        if '0/power' not in self.mqtt_opendtu_data \
+                or 'emeter/0/power' not in self.mqtt_shelly3em_data \
+                or 'emeter/1/power' not in self.mqtt_shelly3em_data \
+                or 'emeter/2/power' not in self.mqtt_shelly3em_data:
             return
         # initialize variables
         grid_sum = 0
@@ -82,12 +88,15 @@ class app:
             self.config['config']['maximum_power_percentage']
         dtu_minimum_power = (self.config['opendtu']['max_power'] / 100) * \
             self.config['config']['minimum_power_percentage']
+        dtu_current_power = self.mqtt_opendtu_data['0/power']
         # sum shelly phases if necessary
         for phase in self.config['shelly3em']['shelly_phases']:
             logging.debug('adding shelly3em phase %i to grid_sum', phase)
             grid_sum += float(
                 self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
         logging.debug('total_power_consumption: %i', grid_sum)
+        # calculate normalized sum
+        normalized_sum = round(grid_sum + dtu_current_power, 2)
         # set new limit (and add 5 watts to prevent drawing power from the grid)
         new_limit = math.ceil(
             grid_sum + self.data_calculated['old_limit'] + self.config['config']['additional_power'])
@@ -112,6 +121,7 @@ class app:
         # update calculated data
         self.data_calculated['old_limit'] = self.data_calculated['new_limit']
         self.data_calculated['grid_sum'] = grid_sum
+        self.data_calculated['normalized_sum'] = normalized_sum
         self.data_calculated['dtu_maximum_power'] = dtu_maximum_power
         self.data_calculated['dtu_minimum_power'] = dtu_minimum_power
         # publish new limit percentage if it has changed
@@ -122,12 +132,12 @@ class app:
                 new_limit
             )
             # publish new limit percentage
-            self.mqtt.publish(
-                'solar/{}/cmd/limit_nonpersistent_absolute'.format(
-                    self.config['opendtu']['mqtt_prefix']
-                ),
-                new_limit
-            )
+            # self.mqtt.publish(
+            #    'solar/{}/cmd/limit_nonpersistent_absolute'.format(
+            #        self.config['opendtu']['mqtt_prefix']
+            #    ),
+            #    new_limit
+            # )
             # update calculated data
             self.data_calculated['new_limit'] = new_limit
             self.data_calculated['last_calculated'] = time.time()

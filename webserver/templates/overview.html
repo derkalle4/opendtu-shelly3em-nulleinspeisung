@@ -56,11 +56,17 @@
                                     Aktueller Zustand
                                 </h5>
                                 <div class="row">
+                                    <div class="col col-6 text-end" data-pull="calculated.normalized_sum">
+                                        {{ data.calculated.normalized_sum }}
+                                    </div>
+                                    <div class="col col-6 text-start">
+                                        Watt (Gesamt)
+                                    </div>
                                     <div class="col col-6 text-end" data-pull="calculated.grid_sum">
                                         {{ data.calculated.grid_sum }}
                                     </div>
                                     <div class="col col-6 text-start">
-                                        Watt (Gesamt)
+                                        Watt (Netzbezug)
                                     </div>
                                     <div class="col col-6 text-end" data-pull="opendtu.0/power">
                                         {{ data.opendtu["0/power"] }}
@@ -88,6 +94,13 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col col-12 px-2 py-1">
+                        <div class="chart-container" style="position: relative; height:40vh; width:100%">
+                            <canvas id="chart_current_status"></canvas>
                         </div>
                     </div>
                 </div>
@@ -564,6 +577,8 @@
         </div>
     </div>
     <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/chart.umd.js"></script>
+    <script src="/static/js/charts/current.status.min.js"></script>
     <script src="/static/js/app.min.js"></script>
 </body>
 

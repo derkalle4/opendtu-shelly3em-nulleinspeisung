@@ -3,19 +3,20 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(pullData, 1000);
 });
 
-
 async function pullData() {
     fetch('/pull')
         .then((response) => response.json())
         .then((data) => {
+            var dataObj = {};
             var dom = document.querySelectorAll('[data-pull]');
             [].forEach.call(dom, function (element) {
-                let tmpData = element.attributes['data-pull'].value;
+                let tmpKey = element.attributes['data-pull'].value;
+                let tmpData = '';
                 // get pulled data and try to match it to the DOM element
-                if (!tmpData.includes('.')) {
-                    tmpData = data[tmpData];
+                if (!tmpKey.includes('.')) {
+                    tmpData = data[tmpKey];
                 } else {
-                    let tmpDataSplit = tmpData.split('.');
+                    let tmpDataSplit = tmpKey.split('.');
                     if (tmpDataSplit.length == 2) tmpData = data[tmpDataSplit[0]][tmpDataSplit[1]];
                     else if (tmpDataSplit.length == 3) tmpData = data[tmpDataSplit[0]][tmpDataSplit[1]][tmpDataSplit[2]];
                     else if (tmpDataSplit.length == 4) tmpData = data[tmpDataSplit[0]][tmpDataSplit[1]][tmpDataSplit[2]][tmpDataSplit[3]];
@@ -25,6 +26,8 @@ async function pullData() {
                     else if (tmpDataSplit.length == 8) tmpData = data[tmpDataSplit[0]][tmpDataSplit[1]][tmpDataSplit[2]][tmpDataSplit[3]][tmpDataSplit[4]][tmpDataSplit[5]][tmpDataSplit[6]][tmpDataSplit[7]];
                     else if (tmpDataSplit.length == 9) tmpData = data[tmpDataSplit[0]][tmpDataSplit[1]][tmpDataSplit[2]][tmpDataSplit[3]][tmpDataSplit[4]][tmpDataSplit[5]][tmpDataSplit[6]][tmpDataSplit[7]][tmpDataSplit[8]];
                 }
+                // set data object
+                dataObj[tmpKey] = tmpData;
                 // set text of the element if it changed
                 if (element.innerText != tmpData) {
                     // set element text
@@ -40,6 +43,14 @@ async function pullData() {
                     element.style.fontWeight = 'bold';
                 }
             });
+            // update current status chart
+            update_chart_current_status(
+                new Date().toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }),
+                dataObj);
         });
     // pulls data in a second
     setTimeout(pullData, 1000);
