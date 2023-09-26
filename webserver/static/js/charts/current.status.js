@@ -26,13 +26,6 @@ var chart_current_status = new Chart(ctx, {
             backgroundColor: 'rgba(0, 255, 0, 0.1)',
             fill: true,
             borderWidth: 3
-        },
-        {
-            id: 'calculated.new_limit',
-            label: 'Limit WR',
-            data: [],
-            borderColor: 'rgb(128, 128, 0)',
-            borderWidth: 2,
         }]
     },
     options: {
