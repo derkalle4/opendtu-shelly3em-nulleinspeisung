@@ -191,12 +191,43 @@ class app:
             return templates.TemplateResponse(
                 "overview.html",
                 {
+                    "page": "overview",
+                    "page_title": "Übersicht",
+                    "request": request,
+                    "config": self.config,
+                    "data": {
+                        'opendtu': self.mqtt_opendtu_data,
+                        'calculated': self.data_calculated
+                    }
+                }
+            )
+
+        @app.get("/solar", response_class=HTMLResponse)
+        async def _web_solar(request: Request):
+            return templates.TemplateResponse(
+                "solar.html",
+                {
+                    "page": "solar",
+                    "page_title": "Solaranlage",
+                    "request": request,
+                    "config": self.config,
+                    "data": {
+                        'opendtu': self.mqtt_opendtu_data,
+                    }
+                }
+            )
+
+        @app.get("/grid", response_class=HTMLResponse)
+        async def _web_grid(request: Request):
+            return templates.TemplateResponse(
+                "grid.html",
+                {
+                    "page": "grid",
+                    "page_title": "Hausanschluss",
                     "request": request,
                     "config": self.config,
                     "data": {
                         'shelly3em': self.mqtt_shelly3em_data,
-                        'opendtu': self.mqtt_opendtu_data,
-                        'calculated': self.data_calculated
                     }
                 }
             )

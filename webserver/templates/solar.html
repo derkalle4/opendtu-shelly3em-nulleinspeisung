@@ -1,0 +1,369 @@
+{% include 'header.html' %}
+
+{% if data.opendtu['status/reachable'] == 0 %}
+<div class="alert alert-danger" role="alert">
+    OpenDTU nicht erreichbar! Keine aktuellen Daten.
+</div>
+{% endif %}
+<div class="row">
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Aktuelles Limit
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.status/limit_relative">
+                        {{ data.opendtu["status/limit_relative"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        %
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.status/limit_absolute">
+                        {{ data.opendtu["status/limit_absolute"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Wechselrichter
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.0/powerdc">
+                        {{ data.opendtu["0/powerdc"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt DC
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/power">
+                        {{ data.opendtu["0/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt AC
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/current">
+                        {{ data.opendtu["0/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/voltage">
+                        {{ data.opendtu["0/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/frequency">
+                        {{ data.opendtu["0/frequency"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Hz
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/yieldday">
+                        {{ data.opendtu["0/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/yieldtotal">
+                        {{ data.opendtu["0/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/powerfactor">
+                        {{ data.opendtu["0/powerfactor"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Powerfaktor
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/efficiency">
+                        {{ data.opendtu["0/efficiency"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Effizienz (%)
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/reactivepower">
+                        {{ data.opendtu["0/reactivepower"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Blindleistung
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.0/temperature">
+                        {{ data.opendtu["0/temperature"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Temperatur (°C)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if '1/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 1
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.1/power">
+                        {{ data.opendtu["1/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.1/current">
+                        {{ data.opendtu["1/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.1/voltage">
+                        {{ data.opendtu["1/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.1/yieldday">
+                        {{ data.opendtu["1/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.1/yieldtotal">
+                        {{ data.opendtu["1/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if '2/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 2
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.2/power">
+                        {{ data.opendtu["2/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.2/current">
+                        {{ data.opendtu["2/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.2/voltage">
+                        {{ data.opendtu["2/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.2/yieldday">
+                        {{ data.opendtu["2/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.2/yieldtotal">
+                        {{ data.opendtu["2/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if '3/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 3
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.3/power">
+                        {{ data.opendtu["3/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.3/current">
+                        {{ data.opendtu["3/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.3/voltage">
+                        {{ data.opendtu["3/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.3/yieldday">
+                        {{ data.opendtu["3/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.3/yieldtotal">
+                        {{ data.opendtu["3/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if '4/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 4
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.4/power">
+                        {{ data.opendtu["4/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.4/current">
+                        {{ data.opendtu["4/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.4/voltage">
+                        {{ data.opendtu["4/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.4/yieldday">
+                        {{ data.opendtu["4/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.4/yieldtotal">
+                        {{ data.opendtu["4/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if '5/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 5
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.5/power">
+                        {{ data.opendtu["5/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.5/current">
+                        {{ data.opendtu["5/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.5/voltage">
+                        {{ data.opendtu["5/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.5/yieldday">
+                        {{ data.opendtu["5/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.5/yieldtotal">
+                        {{ data.opendtu["5/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if '6/power' in data.opendtu %}
+    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">
+                    Solarpanel 6
+                </h5>
+                <div class="row">
+                    <div class="col col-6 text-end" data-pull="opendtu.6/power">
+                        {{ data.opendtu["6/power"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Watt
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.6/current">
+                        {{ data.opendtu["6/current"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        A
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.6/voltage">
+                        {{ data.opendtu["6/voltage"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        V
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.6/yieldday">
+                        {{ data.opendtu["6/yieldday"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Tag
+                    </div>
+                    <div class="col col-6 text-end" data-pull="opendtu.6/yieldtotal">
+                        {{ data.opendtu["6/yieldtotal"] }}
+                    </div>
+                    <div class="col col-6 text-start">
+                        Wh/Gesamt
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% include 'footer.html' %}

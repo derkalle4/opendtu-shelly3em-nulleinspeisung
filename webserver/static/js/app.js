@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     // pulls data in a second
     setTimeout(pullData, 1000);
+    // enable tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 });
 
 async function pullData() {
