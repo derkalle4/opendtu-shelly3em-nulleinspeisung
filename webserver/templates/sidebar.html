@@ -1,6 +1,7 @@
 <div class="col-sm-auto bg-dark sticky-top">
     <div class="d-flex flex-sm-column flex-row flex-nowrap bg-dark align-items-center sticky-top">
-        <a href="https://github.com/derkalle4/opendtu-shelly3em-nulleinspeisung" target="_blank" class="d-block p-3 link-light text-decoration-none" title="" data-bs-toggle="tooltip"
+        <a href="https://github.com/derkalle4/opendtu-shelly3em-nulleinspeisung" target="_blank"
+            class="d-block p-3 link-light text-decoration-none" title="" data-bs-toggle="tooltip"
             data-bs-placement="right" data-bs-original-title="Github Repository">
             <i class="bi bi-lightbulb-fill fs-1"></i>
         </a>
@@ -9,19 +10,31 @@
             <li class="nav-item">
                 <a href="/" class="nav-link py-3 px-2" title="" data-bs-toggle="tooltip" data-bs-placement="right"
                     data-bs-original-title="Übersicht">
+                    {% if page == 'overview' %}
+                    <i class="bi-house-fill fs-1 icon-green"></i>
+                    {% else %}
                     <i class="bi-house fs-1"></i>
+                    {% endif %}
                 </a>
             </li>
             <li>
-                <a href="/solar" class="nav-link py-3 px-2" title="" data-bs-toggle="tooltip"
-                    data-bs-placement="right" data-bs-original-title="Solaranlage">
+                <a href="/solar" class="nav-link py-3 px-2" title="" data-bs-toggle="tooltip" data-bs-placement="right"
+                    data-bs-original-title="Solaranlage">
+                    {% if page == 'solar' %}
+                    <i class="bi bi-sun-fill fs-1 icon-green"></i>
+                    {% else %}
                     <i class="bi bi-sun fs-1"></i>
+                    {% endif %}
                 </a>
             </li>
             <li>
                 <a href="/grid" class="nav-link py-3 px-2" title="" data-bs-toggle="tooltip" data-bs-placement="right"
                     data-bs-original-title="Hausanschluss">
+                    {% if page == 'grid' %}
+                    <i class="bi bi-plug-fill fs-1 icon-green"></i>
+                    {% else %}
                     <i class="bi bi-plug fs-1"></i>
+                    {% endif %}
                 </a>
             </li>
         </ul>
