@@ -77,28 +77,45 @@ class app:
         """Calculate the solar power percentage depending on the current power from shelly3em"""
         logging.debug('calculating solar power percentage')
         # check if solar inverters are reachable
+        count_reachable_opendtu = 0
+        reachable_opendtus = []
         for item in self.config['opendtu']:
             if not item['mqtt_prefix'] in self.mqtt_data['opendtu'] \
                     or not '0/power' in self.mqtt_data['opendtu'][item['mqtt_prefix']] \
                     or not 'status/reachable' in self.mqtt_data['opendtu'][item['mqtt_prefix']] \
                     or int(self.mqtt_data['opendtu'][item['mqtt_prefix']]['status/reachable']) == 0:
                 logging.error(
-                    'opendtu {} is not reachable, skipping calculation (is it dark outside?)'.format(
+                    'opendtu {} is not reachable'.format(
                         item['mqtt_prefix']
                     ))
-                self._reset()
-                return
+            else:
+                count_reachable_opendtu += 1
+                reachable_opendtus.append(item['mqtt_prefix'])
+        # check if there is at least one opendtu reachable
+        if count_reachable_opendtu == 0:
+            logging.error(
+                'no opendtu is reachable, skipping calculation (is it dark outside?)')
+            return
         # check if shelly3em are reachable
+        count_reachable_shelly3em = 0
+        reachable_shelly3em = []
         for item in self.config['shelly3em']:
             if not item['mqtt_prefix'] in self.mqtt_data['shelly3em'] \
                     or 'emeter/0/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']] \
                     or 'emeter/1/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']] \
                     or 'emeter/2/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']]:
                 logging.error(
-                    'shelly3em {} is not reachable, skipping calculation'.format(
+                    'shelly3em {} is not reachable'.format(
                         item['mqtt_prefix']
                     ))
-                return
+            else:
+                count_reachable_shelly3em += 1
+                reachable_shelly3em.append(item['mqtt_prefix'])
+        # check if there is at least one shelly3em reachable
+        if count_reachable_shelly3em == 0:
+            logging.error(
+                'no shelly3em is reachable, skipping calculation')
+            return
         # initialize variables
         sum_grid = 0    # total power consumption of all grids
         sum_solar = 0   # total power production of all solar inverters
@@ -109,6 +126,9 @@ class app:
         sum_solar_minimum_power = 0  # total minimum power of all solar inverters
         # sum shelly phases if necessary
         for item in self.config['shelly3em']:
+            # ignore unreachable shelly3em
+            if not item['mqtt_prefix'] in reachable_shelly3em:
+                continue
             for phase in item['shelly_phases']:
                 logging.debug('adding shelly3em {} phase {} to sum_grid'.format(
                     item['mqtt_prefix'],
@@ -121,6 +141,9 @@ class app:
         logging.debug('total_power_consumption: %i', sum_grid)
         # sum all solar inverters
         for item in self.config['opendtu']:
+            # ignore unreachable opendtu
+            if not item['mqtt_prefix'] in reachable_opendtus:
+                continue
             logging.debug('adding opendtu {} to sum_solar'.format(
                 item['mqtt_prefix']
             ))
@@ -173,6 +196,9 @@ class app:
                 and self.mqtt_data['calculated']['last_calculated'] < time.time() - self.config['config']['delay_between_updates']:
             # iterate over all opendtu and publish their new limit
             for item in self.config['opendtu']:
+                # ignore unreachable opendtu
+                if not item['mqtt_prefix'] in reachable_opendtus:
+                    continue
                 new_limit = math.ceil(
                     sum_new_limit
                     * (float(
