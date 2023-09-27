@@ -1,6 +1,7 @@
 config:
   minimum_power_percentage: 4 # minimum percentage solar power (OpenDTU requires at least 2%)
   maximum_power_percentage: 100 # maximum percentage solar power
+  delay_between_updates: 6 # delay between mqtt updates to the opendtu in seconds
   additional_power: 10 # overprovisioning of solar power to avoid drawing power from grid
   dry_run: false # if true, no mqtt messages will be sent
 webserver:
@@ -9,13 +10,28 @@ webserver:
 mqtt: # MQTT broker (e.g. Mosquitto)
   host: 127.0.0.1
   port: 1883
-  keepalive: 60
+  keepalive: 5
   username: test
   password: test
 shelly3em:
-  mqtt_prefix: shelly3em
-  shelly_phases: [0,1,2] # phases to combine (0, 1, 2) if you measure multiple phases
+  # first shelly3em
+  - mqtt_prefix: shelly3em # enter your custom mqtt prefix here
+    name: "Shelly 3EM"
+    shelly_phases: [0] # phases to combine (0, 1, 2) if you measure multiple phases
+  # second shelly3em
+  #- mqtt_prefix: shelly3em # enter your custom mqtt prefix here
+  #  name: "Shelly 3EM 2"
+  #  shelly_phases: [0] # phases to combine (0, 1, 2) if you measure multiple phases
+  # third  and more shelly3em
+  # ...
 opendtu:
-  mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
-  max_power: 1500 # max power of inverter in Watt for calculation of percentage
-  delay_between_updates: 6 # delay between mqtt updates to the opendtu in seconds
+  # first solar inverter
+  - mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
+    name: "OpenDTU"
+    max_power: 1500 # max power of inverter in Watt for calculation of percentage
+  # second solar inverter
+  #- mqtt_prefix: 1234567890 # serial number of inverter in OpenDTU
+  #  name: "OpenDTU 2"
+  #  max_power: 1500 # max power of inverter in Watt for calculation of percentage
+  # third and more solar inverters
+  # ...

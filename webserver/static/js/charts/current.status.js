@@ -10,7 +10,7 @@ var chart_current_status = new Chart(ctx, {
     data: {
         labels: [],
         datasets: [{
-            id: 'calculated.normalized_sum',
+            id: 'calculated.sum_normalized',
             label: 'Gesamtverbrauch',
             data: [],
             borderColor: 'rgb(255, 0, 0)',
@@ -19,7 +19,7 @@ var chart_current_status = new Chart(ctx, {
             borderWidth: 3
         },
         {
-            id: 'opendtu.0/power',
+            id: 'calculated.sum_solar',
             label: 'Solarbezug',
             data: [],
             borderColor: 'rgb(0, 255, 0)',

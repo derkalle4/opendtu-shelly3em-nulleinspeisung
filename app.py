@@ -19,16 +19,19 @@ class app:
     config = None
     threads = []
     mqtt = None
-    mqtt_shelly3em_data = {}
-    mqtt_opendtu_data = {}
-    data_calculated = {
-        'old_limit': 0,
-        'new_limit': 0,
-        'normalized_sum': 0,
-        'grid_sum': 0,
-        'dtu_maximum_power': 0,
-        'dtu_minimum_power': 0,
-        'last_calculated': 0
+    mqtt_data = {
+        'shelly3em': {},
+        'opendtu': {},
+        'calculated': {
+            'old_limit': 0,
+            'new_limit': 0,
+            'sum_normalized': 0,
+            'sum_grid': 0,
+            'sum_solar': 0,
+            'sum_solar_maximum_power': 0,
+            'sum_solar_minimum_power': 0,
+            'last_calculated': 0
+        }
     }
 
     def __init__(self):
@@ -59,94 +62,145 @@ class app:
 
     def _reset(self):
         """Reset variables"""
-        self.data_calculated = {
+        self.mqtt_data['calculated'] = {
             'old_limit': 0,
             'new_limit': 0,
-            'normalized_sum': 0,
-            'grid_sum': 0,
-            'dtu_maximum_power': 0,
-            'dtu_minimum_power': 0,
+            'sum_normalized': 0,
+            'sum_grid': 0,
+            'sum_solar': 0,
+            'sum_solar_maximum_power': 0,
+            'sum_solar_minimum_power': 0,
             'last_calculated': 0
         }
 
     def _calculate_solar_power_percentage(self):
         """Calculate the solar power percentage depending on the current power from shelly3em"""
         logging.debug('calculating solar power percentage')
-        if not 'status/reachable' in self.mqtt_opendtu_data or int(self.mqtt_opendtu_data['status/reachable']) == 0:
-            logging.error(
-                'opendtu is not reachable, skipping calculation (is it dark outside?)')
-            self._reset()
-            return
-        if '0/power' not in self.mqtt_opendtu_data \
-                or 'emeter/0/power' not in self.mqtt_shelly3em_data \
-                or 'emeter/1/power' not in self.mqtt_shelly3em_data \
-                or 'emeter/2/power' not in self.mqtt_shelly3em_data:
-            return
+        # check if solar inverters are reachable
+        for item in self.config['opendtu']:
+            if not item['mqtt_prefix'] in self.mqtt_data['opendtu'] \
+                    or not '0/power' in self.mqtt_data['opendtu'][item['mqtt_prefix']] \
+                    or not 'status/reachable' in self.mqtt_data['opendtu'][item['mqtt_prefix']] \
+                    or int(self.mqtt_data['opendtu'][item['mqtt_prefix']]['status/reachable']) == 0:
+                logging.error(
+                    'opendtu {} is not reachable, skipping calculation (is it dark outside?)'.format(
+                        item['mqtt_prefix']
+                    ))
+                self._reset()
+                return
+        # check if shelly3em are reachable
+        for item in self.config['shelly3em']:
+            if not item['mqtt_prefix'] in self.mqtt_data['shelly3em'] \
+                    or 'emeter/0/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']] \
+                    or 'emeter/1/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']] \
+                    or 'emeter/2/power' not in self.mqtt_data['shelly3em'][item['mqtt_prefix']]:
+                logging.error(
+                    'shelly3em {} is not reachable, skipping calculation'.format(
+                        item['mqtt_prefix']
+                    ))
+                return
         # initialize variables
-        grid_sum = 0
-        dtu_maximum_power = (self.config['opendtu']['max_power'] / 100) * \
-            self.config['config']['maximum_power_percentage']
-        dtu_minimum_power = (self.config['opendtu']['max_power'] / 100) * \
-            self.config['config']['minimum_power_percentage']
-        dtu_current_power = self.mqtt_opendtu_data['0/power']
+        sum_grid = 0    # total power consumption of all grids
+        sum_solar = 0   # total power production of all solar inverters
+        sum_new_limit = 0  # total power production of all solar inverters
+        # total normalized power of all sources (grid + solar)
+        sum_normalized = 0
+        sum_solar_maximum_power = 0  # total maximum power of all solar inverters
+        sum_solar_minimum_power = 0  # total minimum power of all solar inverters
         # sum shelly phases if necessary
-        for phase in self.config['shelly3em']['shelly_phases']:
-            logging.debug('adding shelly3em phase %i to grid_sum', phase)
-            grid_sum += float(
-                self.mqtt_shelly3em_data['emeter/{}/power'.format(phase)])
-        logging.debug('total_power_consumption: %i', grid_sum)
-        # calculate normalized sum
-        normalized_sum = round(grid_sum + dtu_current_power, 2)
-        # set new limit (and add 5 watts to prevent drawing power from the grid)
-        new_limit = math.ceil(
-            grid_sum + self.data_calculated['old_limit'] + self.config['config']['additional_power'])
-        # check for minimum and maximum power boundaries
-        if new_limit > dtu_maximum_power:
-            new_limit = dtu_maximum_power
-            logging.debug(
-                'new limit is higher than dtu_maximum_power, setting new_limit to dtu_maximum_power (%i)',
-                dtu_maximum_power
+        for item in self.config['shelly3em']:
+            for phase in item['shelly_phases']:
+                logging.debug('adding shelly3em {} phase {} to sum_grid'.format(
+                    item['mqtt_prefix'],
+                    phase
+                ))
+                sum_grid += float(
+                    self.mqtt_data['shelly3em'][item['mqtt_prefix']]
+                    ['emeter/{}/power'.format(phase)]
+                )
+        logging.debug('total_power_consumption: %i', sum_grid)
+        # sum all solar inverters
+        for item in self.config['opendtu']:
+            logging.debug('adding opendtu {} to sum_solar'.format(
+                item['mqtt_prefix']
+            ))
+            sum_solar += float(
+                self.mqtt_data['opendtu'][item['mqtt_prefix']]['0/power']
             )
-        elif new_limit < dtu_minimum_power:
-            new_limit = dtu_minimum_power
+            sum_solar_maximum_power += float(
+                (item['max_power'] / 100) *
+                self.config['config']['maximum_power_percentage']
+            )
+            sum_solar_minimum_power += float(
+                (item['max_power'] / 100) *
+                self.config['config']['minimum_power_percentage']
+            )
+        # calculate normalized sum for all sources (grid + solar)
+        sum_normalized = round(sum_grid + sum_solar, 2)
+        # set new limit (and add X watts to prevent drawing power from the grid)
+        sum_new_limit = math.ceil(
+            sum_grid
+            + self.mqtt_data['calculated']['old_limit']
+            + self.config['config']['additional_power']
+        )
+        # check for minimum and maximum power boundaries
+        if sum_new_limit > sum_solar_maximum_power:
+            sum_new_limit = sum_solar_maximum_power
             logging.debug(
-                'new limit is lower than dtu_minimum_power, setting new_limit to dtu_minimum_power (%i)',
-                dtu_minimum_power
+                'new limit is higher than sum_solar_maximum_power, setting sum_new_limit to sum_solar_maximum_power (%i)',
+                sum_solar_maximum_power
+            )
+        elif sum_new_limit < sum_solar_minimum_power:
+            sum_new_limit = sum_solar_minimum_power
+            logging.debug(
+                'new limit is lower than sum_solar_minimum_power, setting sum_new_limit to sum_solar_minimum_power (%i)',
+                sum_solar_minimum_power
             )
         else:
             logging.debug(
-                'new limit is between dtu_maximum_power and dtu_minimum_power (%i)',
-                new_limit
+                'new limit is between sum_solar_maximum_power and sum_solar_minimum_power (%i)',
+                sum_new_limit
             )
         # update calculated data
-        self.data_calculated['old_limit'] = self.data_calculated['new_limit']
-        self.data_calculated['grid_sum'] = grid_sum
-        self.data_calculated['normalized_sum'] = normalized_sum
-        self.data_calculated['dtu_maximum_power'] = dtu_maximum_power
-        self.data_calculated['dtu_minimum_power'] = dtu_minimum_power
+        self.mqtt_data['calculated']['old_limit'] = self.mqtt_data['calculated']['new_limit']
+        self.mqtt_data['calculated']['sum_grid'] = sum_grid
+        self.mqtt_data['calculated']['sum_solar'] = sum_solar
+        self.mqtt_data['calculated']['sum_normalized'] = sum_normalized
+        self.mqtt_data['calculated']['sum_solar_maximum_power'] = sum_solar_maximum_power
+        self.mqtt_data['calculated']['sum_solar_minimum_power'] = sum_solar_minimum_power
         # publish new limit percentage if it has changed
-        if self.data_calculated['old_limit'] != new_limit \
-                and self.data_calculated['last_calculated'] < time.time() - self.config['opendtu']['delay_between_updates']:
-            if not 'dry_run' in self.config['config'] or not self.config['config']['dry_run']:
-                logging.info(
-                    'publishing new limit to MQTT server: %i watts',
-                    new_limit
+        if self.mqtt_data['calculated']['old_limit'] != sum_new_limit \
+                and self.mqtt_data['calculated']['last_calculated'] < time.time() - self.config['config']['delay_between_updates']:
+            # iterate over all opendtu and publish their new limit
+            for item in self.config['opendtu']:
+                new_limit = math.ceil(
+                    sum_new_limit
+                    * (float(
+                        item['max_power']
+                    ) / sum_solar_maximum_power)
                 )
-                # publish new limit percentage
-                self.mqtt.publish(
-                    'solar/{}/cmd/limit_nonpersistent_absolute'.format(
-                        self.config['opendtu']['mqtt_prefix']
-                    ),
-                    new_limit
-                )
-            else:
-                logging.info(
-                    'dry run: would set limit to: %i watts',
-                    new_limit
-                )
+                if not 'dry_run' in self.config['config'] or not self.config['config']['dry_run']:
+                    logging.info(
+                        'publishing new limit for opendtu {}: {} watts'.format(
+                            item['mqtt_prefix'],
+                            new_limit
+                        ))
+                    # publish new limit percentage
+                    self.mqtt.publish(
+                        'solar/{}/cmd/limit_nonpersistent_absolute'.format(
+                            item['mqtt_prefix']
+                        ),
+                        new_limit
+                    )
+                else:
+                    logging.info(
+                        'dry run: publishing new limit for opendtu {}: {} watts'.format(
+                            item['mqtt_prefix'],
+                            new_limit
+                        ))
             # update calculated data
-            self.data_calculated['new_limit'] = new_limit
-            self.data_calculated['last_calculated'] = time.time()
+            self.mqtt_data['calculated']['new_limit'] = sum_new_limit
+            self.mqtt_data['calculated']['last_calculated'] = time.time()
 
     def _setup_threads(self):
         """Setup threads"""
@@ -200,11 +254,9 @@ class app:
                     "page": "overview",
                     "page_title": "Übersicht",
                     "request": request,
-                    "config": self.config,
-                    "data": {
-                        'opendtu': self.mqtt_opendtu_data,
-                        'calculated': self.data_calculated
-                    }
+                    "config_opendtu": {item['mqtt_prefix']: item for item in self.config['opendtu']},
+                    "config_shelly3em": {item['mqtt_prefix']: item for item in self.config['shelly3em']},
+                    "mqtt_data": self.mqtt_data
                 }
             )
 
@@ -216,10 +268,8 @@ class app:
                     "page": "solar",
                     "page_title": "Solaranlage",
                     "request": request,
-                    "config": self.config,
-                    "data": {
-                        'opendtu': self.mqtt_opendtu_data,
-                    }
+                    "config_opendtu": {item['mqtt_prefix']: item for item in self.config['opendtu']},
+                    "mqtt_data": self.mqtt_data
                 }
             )
 
@@ -231,21 +281,15 @@ class app:
                     "page": "grid",
                     "page_title": "Hausanschluss",
                     "request": request,
-                    "config": self.config,
-                    "data": {
-                        'shelly3em': self.mqtt_shelly3em_data,
-                    }
+                    "config_shelly3em": {item['mqtt_prefix']: item for item in self.config['shelly3em']},
+                    "mqtt_data": self.mqtt_data
                 }
             )
 
         @app.get("/pull", response_class=HTMLResponse)
         async def _web_pull(request: Request):
             return JSONResponse(
-                content=jsonable_encoder({
-                    'shelly3em': self.mqtt_shelly3em_data,
-                    'opendtu': self.mqtt_opendtu_data,
-                    'calculated': self.data_calculated
-                })
+                content=jsonable_encoder(self.mqtt_data)
             )
         # disable logging
         logger = logging.getLogger("uvicorn.error")
@@ -272,7 +316,7 @@ class app:
             self.config['mqtt']['password']
         )
         try:
-            logging.error(
+            logging.info(
                 'trying to connect to MQTT server: %s with port %i and username %s',
                 self.config['mqtt']['host'],
                 self.config['mqtt']['port'],
@@ -299,48 +343,69 @@ class app:
 
     def _mqtt_subscribe_to_topics(self):
         """Suscribe to MQTT topics"""
-        self.mqtt.subscribe(
-            'shellies/{}/#'.format(self.config['shelly3em']['mqtt_prefix'])
-        )
-        self.mqtt.subscribe(
-            'solar/{}/#'.format(self.config['opendtu']['mqtt_prefix'])
-        )
+        logging.info('subscribing to MQTT topics')
+        for item in self.config['shelly3em']:
+            self.mqtt.subscribe(
+                'shellies/{}/#'.format(item['mqtt_prefix'])
+            )
+            logging.info(
+                'subscribed to Shelly3EM MQTT topic: %s',
+                item['mqtt_prefix']
+            )
+        for item in self.config['opendtu']:
+            self.mqtt.subscribe(
+                'solar/{}/#'.format(item['mqtt_prefix'])
+            )
+            logging.info(
+                'subscribed to OpenDTU MQTT topic: %s',
+                item['mqtt_prefix']
+            )
 
-    def _mqtt_callback_shelly3em(self, client, userdata, message):
+    def _mqtt_callback_shelly3em(self, client, userdata, mqtt_prefix, message):
         """Callback for Shelly 3EM
         :param client: MQTT client instance
         :param userdata: user data
+        :param mqtt_prefix: MQTT prefix
         :param message: MQTT message
         """
         # save message to topic
         topic = message.topic.replace(
-            'shellies/{}/'.format(self.config['shelly3em']['mqtt_prefix']), '')
+            'shellies/{}/'.format(mqtt_prefix),
+            ''
+        )
         data = message.payload.decode("utf-8")
         # check if message is valid json
         try:
             data = json.loads(data)
         except ValueError as e:
             pass
-        self.mqtt_shelly3em_data[topic] = data
-        self.mqtt_shelly3em_data['last_update'] = time.time()
+        if mqtt_prefix not in self.mqtt_data['shelly3em']:
+            self.mqtt_data['shelly3em'][mqtt_prefix] = {}
+        self.mqtt_data['shelly3em'][mqtt_prefix][topic] = data
+        self.mqtt_data['shelly3em'][mqtt_prefix]['last_update'] = time.time()
 
-    def _mqtt_callback_opendtu(self, client, userdata, message):
+    def _mqtt_callback_opendtu(self, client, userdata, mqtt_prefix, message):
         """Callback for OpenDTU
         :param client: MQTT client instance
         :param userdata: user data
+        :param mqtt_prefix: MQTT prefix
         :param message: MQTT message
         """
         # save message to topic
         topic = message.topic.replace(
-            'solar/{}/'.format(self.config['opendtu']['mqtt_prefix']), '')
+            'solar/{}/'.format(mqtt_prefix),
+            ''
+        )
         data = message.payload.decode("utf-8")
         # check if message is valid json
         try:
             data = json.loads(data)
         except ValueError as e:
             pass
-        self.mqtt_opendtu_data[topic] = data
-        self.mqtt_opendtu_data['last_update'] = time.time()
+        if not mqtt_prefix in self.mqtt_data['opendtu']:
+            self.mqtt_data['opendtu'][mqtt_prefix] = {}
+        self.mqtt_data['opendtu'][mqtt_prefix][topic] = data
+        self.mqtt_data['opendtu'][mqtt_prefix]['last_update'] = time.time()
 
     def _on_mqtt_disconnect(self, client, userdata, rc):
         """When the MQTT client has been disconnected
@@ -359,13 +424,27 @@ class app:
         """
         logging.debug('received message from MQTT server')
         # check if message is from shelly3em
-        if msg.topic.startswith('shellies/{}/'.format(self.config['shelly3em']['mqtt_prefix'])):
-            self._mqtt_callback_shelly3em(client, userdata, msg)
+        if msg.topic.startswith('shellies/'):
+            for item in self.config['shelly3em']:
+                if msg.topic.startswith('shellies/{}/'.format(item['mqtt_prefix'])):
+                    self._mqtt_callback_shelly3em(
+                        client,
+                        userdata,
+                        item['mqtt_prefix'],
+                        msg
+                    )
         # check if message is from opendtu
-        if msg.topic.startswith('solar/{}/'.format(self.config['opendtu']['mqtt_prefix'])):
-            self._mqtt_callback_opendtu(client, userdata, msg)
-        # check if message is from shelly3em or opendtu and process it
-        if '/power' in msg.topic:
+        if msg.topic.startswith('solar/'):
+            for item in self.config['opendtu']:
+                if msg.topic.startswith('solar/{}/'.format(item['mqtt_prefix'])):
+                    self._mqtt_callback_opendtu(
+                        client,
+                        userdata,
+                        item['mqtt_prefix'],
+                        msg
+                    )
+        # check if message is from shelly3em or opendtu about power and process it
+        if msg.topic.endswith('/power'):
             self._calculate_solar_power_percentage()
 
 

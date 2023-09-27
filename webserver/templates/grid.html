@@ -1,105 +1,77 @@
 {% include 'header.html' %}
 
-{% if data.shelly3em.announce.new_fw %}
-<div class="alert alert-danger" role="alert">
-    Software-Update für Shelly3EM verfügbar!
-</div>
-{% endif %}
-<h1>Hausanschluss</h1>
-<div class="row">
-    {% if 0 in config.shelly3em.shelly_phases %}
-    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title text-center">
-                    Phase 1
-                </h5>
-                <div class="row">
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/0/power">
-                        {{ data.shelly3em["emeter/0/power"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        Watt
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/0/current">
-                        {{ data.shelly3em["emeter/0/current"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        A
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/0/voltage">
-                        {{ data.shelly3em["emeter/0/voltage"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        V
+<h1>Hausanschlüsse</h1>
+
+{% include 'components/shelly3em_firmware.html' %}
+{% include 'components/shelly3em_connection.html' %}
+
+<ul class="nav nav-tabs nav-justified mb-3" id="ex1" role="tablist">
+    {% for item in config_shelly3em %}
+    <li class="nav-item" role="presentation">
+        <a class="nav-link{% if loop.index == 1 %} active{% endif %}" id="tab-{{ item }}-link" data-bs-toggle="tab"
+            href="#tab-{{ item }}" role="tab" aria-controls="tab-{{ item }}" aria-selected="true">
+            {{ config_shelly3em[item]['name'] }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="tab-content" id="tab-content">
+    {% for item in config_shelly3em %}
+    <div class="tab-pane fade show{% if loop.index == 1 %} active{% endif %}" id="tab-{{ item }}" role="tabpanel"
+        aria-labelledby="tab-{{ item }}">
+        <h2>{{ config_shelly3em[item]['name'] }}</h2>
+
+        <!-- check for shelly3em connection -->
+        {% if 'emeter/0/power' not in mqtt_data.shelly3em[item] %}
+        <div class="alert alert-danger" role="alert">
+            Offline :(
+        </div>
+        {% endif %}
+
+        <div class="row">
+            {% for phase in config_shelly3em[item].shelly_phases %}
+            {% if 0 in config_shelly3em[item].shelly_phases %}
+            <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">
+                            Phase {{ phase + 1 }}
+                        </h5>
+                        <div class="row">
+                            {% if item in mqtt_data.shelly3em %}
+                            <div class="col col-6 text-end" data-pull="shelly3em.{{ item }}.emeter/0/power">
+                                {{ mqtt_data.shelly3em[item]["emeter/" + phase|string + "/power"] }}
+                            </div>
+                            <div class="col col-6 text-start">
+                                Watt
+                            </div>
+                            <div class="col col-6 text-end" data-pull="shelly3em.{{ item }}.emeter/0/current">
+                                {{ mqtt_data.shelly3em[item]["emeter/" + phase|string + "/current"] }}
+                            </div>
+                            <div class="col col-6 text-start">
+                                A
+                            </div>
+                            <div class="col col-6 text-end" data-pull="shelly3em.{{ item }}.emeter/0/voltage">
+                                {{ mqtt_data.shelly3em[item]["emeter/" + phase|string + "/voltage"] }}
+                            </div>
+                            <div class="col col-6 text-start">
+                                V
+                            </div>
+                            {% else %}
+                            <div class="col col-12 text-center">
+                                Keine Daten!
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
+            {% endfor %}
         </div>
     </div>
-    {% endif %}
-    {% if 1 in config.shelly3em.shelly_phases %}
-    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title text-center">
-                    Phase 2
-                </h5>
-                <div class="row">
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/1/power">
-                        {{ data.shelly3em["emeter/1/power"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        Watt
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/1/current">
-                        {{ data.shelly3em["emeter/1/current"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        A
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/1/voltage">
-                        {{ data.shelly3em["emeter/1/voltage"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        V
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    {% if 2 in config.shelly3em.shelly_phases %}
-    <div class="col col-12 col-md-6 col-lg-4 px-2 py-1">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title text-center">
-                    Phase 3
-                </h5>
-                <div class="row">
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/2/power">
-                        {{ data.shelly3em["emeter/2/power"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        Watt
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/2/current">
-                        {{ data.shelly3em["emeter/2/current"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        A
-                    </div>
-                    <div class="col col-6 text-end" data-pull="shelly3em.emeter/2/voltage">
-                        {{ data.shelly3em["emeter/2/voltage"] }}
-                    </div>
-                    <div class="col col-6 text-start">
-                        V
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    {% endfor %}
 </div>
 
 {% include 'footer.html' %}

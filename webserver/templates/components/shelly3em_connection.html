@@ -1,0 +1,8 @@
+<!-- check for shelly3em connection -->
+{% for item in config_shelly3em %}
+{% if 'emeter/0/power' not in mqtt_data.shelly3em[item] %}
+<div class="alert alert-danger" role="alert">
+    {{ config_shelly3em[item]['name'] }} nicht erreichbar! Keine aktuellen Daten.
+</div>
+{% endif %}
+{% endfor %}

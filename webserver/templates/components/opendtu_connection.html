@@ -1,0 +1,8 @@
+<!-- check for dtu connection -->
+{% for item in config_opendtu %}
+{% if not 'status/reachable' in mqtt_data.opendtu[item] or mqtt_data.opendtu[item]['status/reachable'] == 0 %}
+<div class="alert alert-danger" role="alert">
+    {{ config_opendtu[item]['name'] }} nicht erreichbar! Keine aktuellen Daten.
+</div>
+{% endif %}
+{% endfor %}

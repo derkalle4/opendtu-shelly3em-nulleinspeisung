@@ -1,0 +1,8 @@
+<!-- check for firmware updates -->
+{% for item in config_shelly3em %}
+{% if 'announce.new_fw' in mqtt_data.shelly3em[item] and mqtt_data.shelly3em[item]['announce.new_fw'] %}
+<div class="alert alert-info" role="alert">
+    {{ config_shelly3em[item]['name'] }} hat eine aktualisierte Firmware. Bitte prüfen!
+</div>
+{% endif %}
+{% endfor %}
