@@ -127,17 +127,23 @@ class app:
         # publish new limit percentage if it has changed
         if self.data_calculated['old_limit'] != new_limit \
                 and self.data_calculated['last_calculated'] < time.time() - self.config['opendtu']['delay_between_updates']:
-            logging.info(
-                'publishing new limit to MQTT server: %i watts',
-                new_limit
-            )
-            # publish new limit percentage
-            self.mqtt.publish(
-                'solar/{}/cmd/limit_nonpersistent_absolute'.format(
-                    self.config['opendtu']['mqtt_prefix']
-                ),
-                new_limit
-            )
+            if not 'dry_run' in self.config['config'] or not self.config['config']['dry_run']:
+                logging.info(
+                    'publishing new limit to MQTT server: %i watts',
+                    new_limit
+                )
+                # publish new limit percentage
+                self.mqtt.publish(
+                    'solar/{}/cmd/limit_nonpersistent_absolute'.format(
+                        self.config['opendtu']['mqtt_prefix']
+                    ),
+                    new_limit
+                )
+            else:
+                logging.info(
+                    'dry run: would set limit to: %i watts',
+                    new_limit
+                )
             # update calculated data
             self.data_calculated['new_limit'] = new_limit
             self.data_calculated['last_calculated'] = time.time()
