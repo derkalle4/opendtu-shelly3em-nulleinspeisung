@@ -1,10 +1,16 @@
 {% include 'header.html' %}
 
+{%if config_shelly3em|length > 1 %}
 <h1>Hausanschlüsse</h1>
+{% else %}
+<h1>Hausanschluss</h1>
+{% endif %}
 
+{% include 'components/opendtu_connection.html' %}
 {% include 'components/shelly3em_firmware.html' %}
 {% include 'components/shelly3em_connection.html' %}
 
+{%if config_shelly3em|length > 1 %}
 <ul class="nav nav-tabs nav-justified mb-3" id="ex1" role="tablist">
     {% for item in config_shelly3em %}
     <li class="nav-item" role="presentation">
@@ -15,6 +21,7 @@
     </li>
     {% endfor %}
 </ul>
+{% endif %}
 
 <div class="tab-content" id="tab-content">
     {% for item in config_shelly3em %}

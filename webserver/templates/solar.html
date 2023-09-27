@@ -1,9 +1,14 @@
 {% include 'header.html' %}
 
-<h1>Solarpanele</h1>
+{%if config_opendtu|length > 1 %}
+<h1>Wechselrichter</h1>
+{% else %}
+<h1>Wechselrichter</h1>
+{% endif %}
 
 {% include 'components/opendtu_connection.html' %}
 
+{%if config_opendtu|length > 1 %}
 <ul class="nav nav-tabs nav-justified mb-3" id="ex1" role="tablist">
     {% for item in config_opendtu %}
     <li class="nav-item" role="presentation">
@@ -14,6 +19,7 @@
     </li>
     {% endfor %}
 </ul>
+{% endif %}
 
 <div class="tab-content" id="tab-content">
     {% for item in config_opendtu %}
